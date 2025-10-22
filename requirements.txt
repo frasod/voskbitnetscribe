@@ -1,0 +1,20 @@
+# VOSK BitNet Scribe - Clean dependencies
+# No OpenAI, no Ollama - only essential packages
+
+# Core speech recognition
+vosk==0.3.45
+
+# Audio capture
+sounddevice==0.4.6
+
+# Numerical processing (required by VOSK)
+numpy==1.26.4
+
+# UI framework
+PyQt6==6.6.1
+
+# BitNet inference
+# NOTE: Add BitNet-specific dependencies here once known
+# Examples (adjust based on actual BitNet requirements):
+# bitnet-cpp-python==X.X.X
+# llama-cpp-python==X.X.X  # If BitNet uses llama.cpp backend
