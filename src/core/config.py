@@ -66,7 +66,7 @@ class BitNetConfig:
     )
 
 
-@dataclass(frozen=True)
+@dataclass
 class UIConfig:
     """User interface configuration."""
     
@@ -74,6 +74,7 @@ class UIConfig:
     window_width: int = 1200
     window_height: int = 800
     font_size: int = 14
+    goat_sound_enabled: bool = True  # Enable/disable goat scream sound
     
     # Braun-inspired color palette
     background: str = "#F5F5F5"  # Clean light gray

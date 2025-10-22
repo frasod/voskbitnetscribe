@@ -4,14 +4,16 @@ Delegates to services, never contains business logic.
 """
 
 from typing import Optional
+import os
 
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QTextEdit, QLabel, QMessageBox, QTabWidget, QLineEdit,
-    QSpinBox, QDoubleSpinBox, QFormLayout, QGroupBox
+    QSpinBox, QDoubleSpinBox, QFormLayout, QGroupBox, QCheckBox
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QObject, QThread
-from PyQt6.QtGui import QTextCursor
+from PyQt6.QtCore import Qt, pyqtSignal, QObject, QThread, QUrl
+from PyQt6.QtGui import QTextCursor, QPixmap
+from PyQt6.QtMultimedia import QSoundEffect
 
 from ..core.config import Config
 from ..core.models import TranscriptionResult, ProcessingRequest, ProcessingResult
@@ -85,6 +87,15 @@ class MainWindow(QMainWindow):
         self._inference_worker: Optional[InferenceWorker] = None
         self._chat_thread: Optional[QThread] = None
         self._chat_worker: Optional[ChatWorker] = None
+        
+        # Sound effect
+        self._goat_sound = QSoundEffect()
+        goat_sound_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "assets", "sounds", "goat_scream.wav"
+        )
+        self._goat_sound.setSource(QUrl.fromLocalFile(goat_sound_path))
+        self._goat_sound.setVolume(0.5)
         
         # Connect internal signals to UI update slots
         self._partial_received.connect(self._update_partial_display)
@@ -387,6 +398,37 @@ class MainWindow(QMainWindow):
         self._system_prompt_edit.setMaximumHeight(120)
         layout.addWidget(self._system_prompt_edit)
         
+        # Goat settings
+        goat_group = QGroupBox("🐐 Goat Settings")
+        goat_layout = QVBoxLayout()
+        
+        # Goat image
+        goat_image_label = QLabel()
+        goat_image_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "assets", "images", "goat.png"
+        )
+        if os.path.exists(goat_image_path):
+            pixmap = QPixmap(goat_image_path)
+            scaled_pixmap = pixmap.scaled(72, 72, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            goat_image_label.setPixmap(scaled_pixmap)
+            goat_image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            goat_layout.addWidget(goat_image_label)
+        
+        # Goat sound toggle
+        self._goat_sound_checkbox = QCheckBox("Enable Screaming Goat Sound 🔊")
+        self._goat_sound_checkbox.setChecked(self._config.ui.goat_sound_enabled)
+        self._goat_sound_checkbox.stateChanged.connect(self._toggle_goat_sound)
+        goat_layout.addWidget(self._goat_sound_checkbox)
+        
+        goat_info = QLabel("Plays a majestic goat scream when notes are generated or chat responds")
+        goat_info.setProperty("status", True)
+        goat_info.setWordWrap(True)
+        goat_layout.addWidget(goat_info)
+        
+        goat_group.setLayout(goat_layout)
+        layout.addWidget(goat_group)
+        
         # Apply button
         apply_button = QPushButton("Apply Settings")
         apply_button.clicked.connect(self._apply_settings)
@@ -595,6 +637,9 @@ class MainWindow(QMainWindow):
             time_ms = result.processing_time_ms or 0
             self._status_label.setText(f"✅ Complete ({time_ms:.0f}ms)")
             self._status_label.setStyleSheet("color: #2D5016;")
+            # Play goat scream on successful note generation (if enabled)
+            if self._config.ui.goat_sound_enabled:
+                self._goat_sound.play()
         else:
             self._show_error("Processing Error", result.error_message or "Unknown error")
             self._status_label.setText("❌ Error")
@@ -666,6 +711,9 @@ class MainWindow(QMainWindow):
             self._append_chat_message("Assistant", message)
             self._chat_status_label.setText("✅ Ready")
             self._chat_status_label.setStyleSheet("color: #2D5016;")
+            # Play goat scream on successful chat response (if enabled)
+            if self._config.ui.goat_sound_enabled:
+                self._goat_sound.play()
         else:
             self._show_error("Chat Error", error)
             self._chat_status_label.setText("❌ Error")
@@ -732,6 +780,10 @@ class MainWindow(QMainWindow):
         else:
             self._bitnet_status_label.setText(f"❌ {error or 'Not available'}")
             self._bitnet_status_label.setStyleSheet("color: #C41E3A;")
+    
+    def _toggle_goat_sound(self, state: int) -> None:
+        """Toggle goat sound on/off."""
+        self._config.ui.goat_sound_enabled = (state == Qt.CheckState.Checked.value)
     
     def _apply_settings(self) -> None:
         """Apply settings changes."""
