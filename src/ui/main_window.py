@@ -344,6 +344,36 @@ class MainWindow(QMainWindow):
         self._timeout_spin.setSuffix(" seconds")
         form_layout.addRow("Timeout:", self._timeout_spin)
         
+        # Repeat penalty
+        self._repeat_penalty_spin = QDoubleSpinBox()
+        self._repeat_penalty_spin.setRange(1.0, 2.0)
+        self._repeat_penalty_spin.setValue(self._config.bitnet.repeat_penalty if self._config.bitnet else 1.15)
+        self._repeat_penalty_spin.setSingleStep(0.05)
+        self._repeat_penalty_spin.setDecimals(2)
+        form_layout.addRow("Repeat Penalty:", self._repeat_penalty_spin)
+        
+        # Repeat last N
+        self._repeat_last_n_spin = QSpinBox()
+        self._repeat_last_n_spin.setRange(0, 256)
+        self._repeat_last_n_spin.setValue(self._config.bitnet.repeat_last_n if self._config.bitnet else 64)
+        self._repeat_last_n_spin.setSingleStep(16)
+        form_layout.addRow("Repeat Last N:", self._repeat_last_n_spin)
+        
+        # Top P
+        self._top_p_spin = QDoubleSpinBox()
+        self._top_p_spin.setRange(0.0, 1.0)
+        self._top_p_spin.setValue(self._config.bitnet.top_p if self._config.bitnet else 0.9)
+        self._top_p_spin.setSingleStep(0.05)
+        self._top_p_spin.setDecimals(2)
+        form_layout.addRow("Top P:", self._top_p_spin)
+        
+        # Top K
+        self._top_k_spin = QSpinBox()
+        self._top_k_spin.setRange(1, 100)
+        self._top_k_spin.setValue(self._config.bitnet.top_k if self._config.bitnet else 40)
+        self._top_k_spin.setSingleStep(5)
+        form_layout.addRow("Top K:", self._top_k_spin)
+        
         inference_group.setLayout(form_layout)
         layout.addWidget(inference_group)
         
@@ -689,6 +719,10 @@ class MainWindow(QMainWindow):
             max_tokens=self._max_tokens_spin.value(),
             temperature=self._temperature_spin.value(),
             timeout_seconds=self._timeout_spin.value(),
+            repeat_penalty=self._repeat_penalty_spin.value(),
+            repeat_last_n=self._repeat_last_n_spin.value(),
+            top_p=self._top_p_spin.value(),
+            top_k=self._top_k_spin.value(),
             system_prompt=self._system_prompt_edit.toPlainText().strip()
         )
         

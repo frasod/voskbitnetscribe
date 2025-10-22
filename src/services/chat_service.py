@@ -87,9 +87,14 @@ class ChatService:
         
         payload = {
             "prompt": prompt,
-            "max_tokens": self._config.max_tokens,
+            "n_predict": self._config.max_tokens,
             "temperature": self._config.temperature,
-            "stop": ["\nUser:", "\n\n"]  # Stop at next user turn
+            "repeat_penalty": self._config.repeat_penalty,
+            "repeat_last_n": self._config.repeat_last_n,
+            "top_p": self._config.top_p,
+            "top_k": self._config.top_k,
+            "stop": ["\nUser:", "\n\n", "\nYou:", "\nQuestion:"],
+            "stream": False
         }
         
         try:

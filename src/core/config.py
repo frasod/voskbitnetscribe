@@ -52,6 +52,12 @@ class BitNetConfig:
     temperature: float = 0.7
     timeout_seconds: float = 30.0
     
+    # Advanced parameters
+    repeat_penalty: float = 1.15
+    repeat_last_n: int = 64
+    top_p: float = 0.9
+    top_k: int = 40
+    
     # Default system prompt for note generation
     system_prompt: str = (
         "Convert this transcript into concise, well-organized notes. "

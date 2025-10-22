@@ -116,7 +116,11 @@ class InferenceService:
                 "prompt": prompt,
                 "n_predict": max_tokens,
                 "temperature": temperature,
-                "stop": [],
+                "repeat_penalty": self._config.repeat_penalty,
+                "repeat_last_n": self._config.repeat_last_n,
+                "top_p": self._config.top_p,
+                "top_k": self._config.top_k,
+                "stop": ["\n\nYou:", "\nUser:", "\nQuestion:"],
                 "stream": False
             }
             
