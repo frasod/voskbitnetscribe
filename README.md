@@ -1,6 +1,6 @@
 # VOSK BitNet Scribe
 
-A clean, modular speech-to-notes application combining VOSK speech recognition with local BitNet inference.
+A clean, modular speech-to-text and chat application combining VOSK speech recognition with local BitNet inference. Features both voice transcription and text-based chat in a minimalist interface.
 
 ## Architecture Philosophy
 
@@ -75,6 +75,22 @@ bitnet-server --port 8081
 # Start application
 ./start.sh
 ```
+
+The application features two main modes:
+
+### Voice Transcription
+1. Click "Start Recording" to capture speech
+2. Speak into your microphone
+3. Click "Stop Recording" to end capture
+4. Click "Generate Notes" to process transcript with BitNet
+5. Click "Copy to Clipboard" to save results
+
+### Chat Mode
+1. Click the "Chat" tab at the top
+2. Type your message in the input field
+3. Press Enter or click "Send"
+4. The AI assistant responds with context from conversation history
+5. Use "Clear History" to start a fresh conversation
 
 ## Architecture Benefits
 
