@@ -481,46 +481,52 @@ class MainWindow(QMainWindow):
     
     def _start_processing(self) -> None:
         """Start text processing with BitNet."""
-        if not self._inference_service:
-            self._show_warning("Service Unavailable", "BitNet service not initialized")
-            return
-        
-        transcript = self._transcript_display.toPlainText().strip()
-        if not transcript:
-            self._show_warning("No Transcript", "Nothing to process")
-            return
-        
-        custom_prompt = self._prompt_input.toPlainText().strip()
-        
-        request = ProcessingRequest(
-            transcript=transcript,
-            custom_prompt=custom_prompt if custom_prompt else None
-        )
-        
-        # Validate request
-        is_valid, error = request.validate()
-        if not is_valid:
-            self._show_error("Invalid Request", error or "Unknown validation error")
-            return
-        
-        # Update UI state
-        self._process_button.setEnabled(False)
-        self._status_label.setText("⏳ BitNet processing...")
-        self._status_label.setStyleSheet("color: #606060;")
-        
-        # Run inference in background using QThread
-        self._inference_thread = QThread()
-        self._inference_worker = InferenceWorker(self._inference_service, request)
-        self._inference_worker.moveToThread(self._inference_thread)
-        
-        # Connect signals
-        self._inference_thread.started.connect(self._inference_worker.run)
-        self._inference_worker.finished.connect(self._handle_processing_complete)
-        self._inference_worker.finished.connect(self._inference_thread.quit)
-        self._inference_worker.status_update.connect(self._update_status)
-        
-        # Start thread
-        self._inference_thread.start()
+        try:
+            if not self._inference_service:
+                self._show_warning("Service Unavailable", "BitNet service not initialized")
+                return
+            
+            transcript = self._transcript_display.toPlainText().strip()
+            if not transcript:
+                self._show_warning("No Transcript", "Nothing to process")
+                return
+            
+            custom_prompt = self._prompt_input.toPlainText().strip()
+            
+            request = ProcessingRequest(
+                transcript=transcript,
+                custom_prompt=custom_prompt if custom_prompt else None
+            )
+            
+            # Validate request
+            is_valid, error = request.validate()
+            if not is_valid:
+                self._show_error("Invalid Request", error or "Unknown validation error")
+                return
+            
+            # Update UI state
+            self._process_button.setEnabled(False)
+            self._status_label.setText("⏳ BitNet processing...")
+            self._status_label.setStyleSheet("color: #606060;")
+            
+            # Run inference in background using QThread
+            self._inference_thread = QThread()
+            self._inference_worker = InferenceWorker(self._inference_service, request)
+            self._inference_worker.moveToThread(self._inference_thread)
+            
+            # Connect signals
+            self._inference_thread.started.connect(self._inference_worker.run)
+            self._inference_worker.finished.connect(self._handle_processing_complete)
+            self._inference_worker.finished.connect(self._inference_thread.quit)
+            self._inference_worker.status_update.connect(self._update_status)
+            
+            # Start thread
+            self._inference_thread.start()
+        except Exception as e:
+            self._show_error("Processing Error", f"Failed to start processing: {str(e)}")
+            self._process_button.setEnabled(True)
+            self._status_label.setText("❌ Error")
+            self._status_label.setStyleSheet("color: #C41E3A;")
     
     def _clear_all(self) -> None:
         """Clear all text fields."""
@@ -591,6 +597,9 @@ class MainWindow(QMainWindow):
     def _update_status(self, message: str) -> None:
         """Update status label."""
         self._status_label.setText(message)
+        # Reset to default color when just updating message
+        if not any(x in message for x in ["⏳", "✅", "❌"]):
+            self._status_label.setStyleSheet("")
     
     # Chat event handlers
     
@@ -646,6 +655,9 @@ class MainWindow(QMainWindow):
     def _update_chat_status(self, message: str) -> None:
         """Update chat status label."""
         self._chat_status_label.setText(message)
+        # Reset to default color when just updating message
+        if not any(x in message for x in ["⏳", "✅", "❌"]):
+            self._chat_status_label.setStyleSheet("")
     
     def _append_chat_message(self, role: str, message: str) -> None:
         """Append message to chat display."""
