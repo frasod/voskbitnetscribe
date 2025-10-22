@@ -7,7 +7,8 @@ from typing import Optional
 
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QTextEdit, QLabel, QMessageBox, QTabWidget, QLineEdit
+    QPushButton, QTextEdit, QLabel, QMessageBox, QTabWidget, QLineEdit,
+    QSpinBox, QDoubleSpinBox, QFormLayout, QGroupBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QObject, QThread
 from PyQt6.QtGui import QTextCursor
@@ -114,7 +115,11 @@ class MainWindow(QMainWindow):
         self._tabs = QTabWidget()
         main_layout.addWidget(self._tabs)
         
-        # Voice transcription tab
+        # Chat tab (first)
+        chat_tab = self._create_chat_tab()
+        self._tabs.addTab(chat_tab, "Chat")
+        
+        # Voice transcription tab (second)
         voice_tab = QWidget()
         voice_layout = QHBoxLayout(voice_tab)
         voice_layout.setContentsMargins(16, 16, 16, 16)
@@ -127,9 +132,9 @@ class MainWindow(QMainWindow):
         
         self._tabs.addTab(voice_tab, "Voice Transcription")
         
-        # Chat tab
-        chat_tab = self._create_chat_tab()
-        self._tabs.addTab(chat_tab, "Chat")
+        # Settings tab (third)
+        settings_tab = self._create_settings_tab()
+        self._tabs.addTab(settings_tab, "Settings")
     
     def _create_input_panel(self) -> QVBoxLayout:
         """Create left input panel."""
@@ -186,12 +191,6 @@ class MainWindow(QMainWindow):
         self._process_button.clicked.connect(self._start_processing)
         self._process_button.setEnabled(False)
         button_layout.addWidget(self._process_button)
-        
-        self._stop_button = QPushButton("Stop")
-        self._stop_button.clicked.connect(self._stop_processing)
-        self._stop_button.setEnabled(False)
-        self._stop_button.setProperty("danger", True)
-        button_layout.addWidget(self._stop_button)
         
         clear_button = QPushButton("Clear")
         clear_button.clicked.connect(self._clear_all)
@@ -277,6 +276,101 @@ class MainWindow(QMainWindow):
         
         return widget
     
+    def _create_settings_tab(self) -> QWidget:
+        """Create settings interface tab."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
+        
+        # Title
+        title = QLabel("BitNet Settings")
+        title.setProperty("heading", True)
+        layout.addWidget(title)
+        
+        # BitNet status indicator
+        status_group = QGroupBox("Connection Status")
+        status_layout = QVBoxLayout()
+        
+        self._bitnet_status_label = QLabel("Checking...")
+        self._bitnet_status_label.setProperty("status", True)
+        status_layout.addWidget(self._bitnet_status_label)
+        
+        check_button = QPushButton("Check BitNet Status")
+        check_button.clicked.connect(self._check_bitnet_status)
+        status_layout.addWidget(check_button)
+        
+        status_group.setLayout(status_layout)
+        layout.addWidget(status_group)
+        
+        # Connection settings
+        conn_group = QGroupBox("Connection")
+        conn_layout = QFormLayout()
+        conn_layout.setSpacing(8)
+        
+        self._endpoint_input = QLineEdit()
+        self._endpoint_input.setText(self._config.bitnet.endpoint_url if self._config.bitnet else "http://localhost:8081/completion")
+        conn_layout.addRow("Endpoint URL:", self._endpoint_input)
+        
+        conn_group.setLayout(conn_layout)
+        layout.addWidget(conn_group)
+        
+        # Inference settings
+        inference_group = QGroupBox("Inference Parameters")
+        form_layout = QFormLayout()
+        form_layout.setSpacing(12)
+        
+        # Max tokens
+        self._max_tokens_spin = QSpinBox()
+        self._max_tokens_spin.setRange(128, 8192)
+        self._max_tokens_spin.setValue(self._config.bitnet.max_tokens if self._config.bitnet else 2048)
+        self._max_tokens_spin.setSingleStep(128)
+        form_layout.addRow("Max Tokens:", self._max_tokens_spin)
+        
+        # Temperature
+        self._temperature_spin = QDoubleSpinBox()
+        self._temperature_spin.setRange(0.0, 2.0)
+        self._temperature_spin.setValue(self._config.bitnet.temperature if self._config.bitnet else 0.7)
+        self._temperature_spin.setSingleStep(0.1)
+        self._temperature_spin.setDecimals(2)
+        form_layout.addRow("Temperature:", self._temperature_spin)
+        
+        # Timeout
+        self._timeout_spin = QDoubleSpinBox()
+        self._timeout_spin.setRange(5.0, 120.0)
+        self._timeout_spin.setValue(self._config.bitnet.timeout_seconds if self._config.bitnet else 30.0)
+        self._timeout_spin.setSingleStep(5.0)
+        self._timeout_spin.setDecimals(1)
+        self._timeout_spin.setSuffix(" seconds")
+        form_layout.addRow("Timeout:", self._timeout_spin)
+        
+        inference_group.setLayout(form_layout)
+        layout.addWidget(inference_group)
+        
+        # System prompt
+        prompt_label = QLabel("System Prompt for Notes:")
+        layout.addWidget(prompt_label)
+        
+        self._system_prompt_edit = QTextEdit()
+        self._system_prompt_edit.setPlaceholderText("Enter system prompt for note generation...")
+        self._system_prompt_edit.setText(self._config.bitnet.system_prompt if self._config.bitnet else "")
+        self._system_prompt_edit.setMaximumHeight(120)
+        layout.addWidget(self._system_prompt_edit)
+        
+        # Apply button
+        apply_button = QPushButton("Apply Settings")
+        apply_button.clicked.connect(self._apply_settings)
+        layout.addWidget(apply_button)
+        
+        # Info label
+        info_label = QLabel("Note: Settings apply to new requests only.")
+        info_label.setProperty("status", True)
+        layout.addWidget(info_label)
+        
+        layout.addStretch()
+        
+        return widget
+    
     def _init_services(self) -> None:
         """Initialize backend services."""
         # Audio service
@@ -300,6 +394,8 @@ class MainWindow(QMainWindow):
         if self._config.bitnet:
             self._inference_service = InferenceService(self._config.bitnet)
             self._chat_service = ChatService(self._config.bitnet)
+            # Check BitNet status on startup
+            self._check_bitnet_status()
         else:
             self._show_warning(
                 "BitNet Not Configured",
@@ -379,8 +475,8 @@ class MainWindow(QMainWindow):
         
         # Update UI state
         self._process_button.setEnabled(False)
-        self._stop_button.setEnabled(True)
-        self._status_label.setText("Processing...")
+        self._status_label.setText("⏳ BitNet processing...")
+        self._status_label.setStyleSheet("color: #606060;")
         
         # Run inference in background using QThread
         self._inference_thread = QThread()
@@ -395,15 +491,6 @@ class MainWindow(QMainWindow):
         
         # Start thread
         self._inference_thread.start()
-    
-    def _stop_processing(self) -> None:
-        """Cancel ongoing processing."""
-        if self._inference_service:
-            self._inference_service.cancel()
-        
-        self._status_label.setText("Cancelled")
-        self._process_button.setEnabled(True)
-        self._stop_button.setEnabled(False)
     
     def _clear_all(self) -> None:
         """Clear all text fields."""
@@ -460,15 +547,16 @@ class MainWindow(QMainWindow):
     def _handle_processing_complete(self, result: ProcessingResult) -> None:
         """Handle inference completion."""
         self._process_button.setEnabled(True)
-        self._stop_button.setEnabled(False)
         
         if result.is_success:
             self._output_display.setPlainText(result.processed_text or "")
             time_ms = result.processing_time_ms or 0
-            self._status_label.setText(f"Complete ({time_ms:.0f}ms)")
+            self._status_label.setText(f"✅ Complete ({time_ms:.0f}ms)")
+            self._status_label.setStyleSheet("color: #2D5016;")
         else:
             self._show_error("Processing Error", result.error_message or "Unknown error")
-            self._status_label.setText("Error")
+            self._status_label.setText("❌ Error")
+            self._status_label.setStyleSheet("color: #C41E3A;")
     
     def _update_status(self, message: str) -> None:
         """Update status label."""
@@ -493,7 +581,8 @@ class MainWindow(QMainWindow):
         # Update UI state
         self._chat_send_button.setEnabled(False)
         self._chat_input.setEnabled(False)
-        self._chat_status_label.setText("Thinking...")
+        self._chat_status_label.setText("⏳ BitNet thinking...")
+        self._chat_status_label.setStyleSheet("color: #606060;")
         
         # Run chat in background using QThread
         self._chat_thread = QThread()
@@ -517,10 +606,12 @@ class MainWindow(QMainWindow):
         
         if success:
             self._append_chat_message("Assistant", message)
-            self._chat_status_label.setText("Ready")
+            self._chat_status_label.setText("✅ Ready")
+            self._chat_status_label.setStyleSheet("color: #2D5016;")
         else:
             self._show_error("Chat Error", error)
-            self._chat_status_label.setText("Error")
+            self._chat_status_label.setText("❌ Error")
+            self._chat_status_label.setStyleSheet("color: #C41E3A;")
     
     def _update_chat_status(self, message: str) -> None:
         """Update chat status label."""
@@ -559,6 +650,60 @@ class MainWindow(QMainWindow):
             self._chat_status_label.setText("Copied to clipboard")
         else:
             self._show_error("Copy Failed", error or "Unknown error")
+    
+    # Settings handlers
+    
+    def _check_bitnet_status(self) -> None:
+        """Check if BitNet is available."""
+        if not self._config.bitnet:
+            self._bitnet_status_label.setText("❌ Not configured")
+            self._bitnet_status_label.setStyleSheet("color: #C41E3A;")
+            return
+        
+        endpoint = self._endpoint_input.text().strip() if hasattr(self, '_endpoint_input') else self._config.bitnet.endpoint_url
+        
+        # Check availability
+        is_available, error = InferenceService.check_availability(endpoint)
+        
+        if is_available:
+            self._bitnet_status_label.setText(f"✅ Connected to {endpoint}")
+            self._bitnet_status_label.setStyleSheet("color: #2D5016;")
+        else:
+            self._bitnet_status_label.setText(f"❌ {error or 'Not available'}")
+            self._bitnet_status_label.setStyleSheet("color: #C41E3A;")
+    
+    def _apply_settings(self) -> None:
+        """Apply settings changes."""
+        if not self._config.bitnet:
+            self._show_warning("No Configuration", "BitNet not configured")
+            return
+        
+        # Update config values (create new immutable config)
+        from dataclasses import replace
+        
+        new_endpoint = self._endpoint_input.text().strip()
+        
+        new_bitnet_config = replace(
+            self._config.bitnet,
+            endpoint_url=new_endpoint,
+            max_tokens=self._max_tokens_spin.value(),
+            temperature=self._temperature_spin.value(),
+            timeout_seconds=self._timeout_spin.value(),
+            system_prompt=self._system_prompt_edit.toPlainText().strip()
+        )
+        
+        self._config = replace(self._config, bitnet=new_bitnet_config)
+        
+        # Recreate services with new config
+        if self._inference_service:
+            self._inference_service = InferenceService(new_bitnet_config)
+        if self._chat_service:
+            self._chat_service = ChatService(new_bitnet_config)
+        
+        # Check status with new endpoint
+        self._check_bitnet_status()
+        
+        QMessageBox.information(self, "Settings Applied", "Settings have been updated successfully.")
     
     # UI helpers
     

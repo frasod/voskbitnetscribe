@@ -54,10 +54,9 @@ class BitNetConfig:
     
     # Default system prompt for note generation
     system_prompt: str = (
-        "You are a precise note-taking assistant. "
-        "Convert speech transcripts into clear, structured notes. "
-        "Maintain factual accuracy. Remove filler words and repetition. "
-        "Output only the processed notes without commentary."
+        "Convert this transcript into concise, well-organized notes. "
+        "Remove filler words, repetition, and unnecessary details. "
+        "Keep it brief and factual."
     )
 
 
