@@ -60,9 +60,9 @@ class BitNetConfig:
     
     # Default system prompt for note generation
     system_prompt: str = (
-        "Convert this transcript into concise, well-organized notes. "
-        "Remove filler words, repetition, and unnecessary details. "
-        "Keep it brief and factual."
+        "Refine and organize this note. Structure the key information logically. "
+        "Eliminate all repetition, filler, and non-essential details to ensure "
+        "the final output is brief, factual, and scannable."
     )
 
 

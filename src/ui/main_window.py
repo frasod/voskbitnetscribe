@@ -509,6 +509,11 @@ class MainWindow(QMainWindow):
             self._status_label.setText("⏳ BitNet processing...")
             self._status_label.setStyleSheet("color: #606060;")
             
+            # Clean up old thread if exists
+            if self._inference_thread is not None and self._inference_thread.isRunning():
+                self._inference_thread.quit()
+                self._inference_thread.wait()
+            
             # Run inference in background using QThread
             self._inference_thread = QThread()
             self._inference_worker = InferenceWorker(self._inference_service, request)
@@ -518,6 +523,8 @@ class MainWindow(QMainWindow):
             self._inference_thread.started.connect(self._inference_worker.run)
             self._inference_worker.finished.connect(self._handle_processing_complete)
             self._inference_worker.finished.connect(self._inference_thread.quit)
+            self._inference_worker.finished.connect(self._inference_thread.deleteLater)
+            self._inference_worker.finished.connect(self._inference_worker.deleteLater)
             self._inference_worker.status_update.connect(self._update_status)
             
             # Start thread
@@ -605,37 +612,51 @@ class MainWindow(QMainWindow):
     
     def _send_chat_message(self) -> None:
         """Send chat message to BitNet."""
-        if not self._chat_service:
-            self._show_warning("Service Unavailable", "Chat service not initialized")
-            return
-        
-        message = self._chat_input.text().strip()
-        if not message:
-            return
-        
-        # Display user message
-        self._append_chat_message("You", message)
-        self._chat_input.clear()
-        
-        # Update UI state
-        self._chat_send_button.setEnabled(False)
-        self._chat_input.setEnabled(False)
-        self._chat_status_label.setText("⏳ BitNet thinking...")
-        self._chat_status_label.setStyleSheet("color: #606060;")
-        
-        # Run chat in background using QThread
-        self._chat_thread = QThread()
-        self._chat_worker = ChatWorker(self._chat_service, message)
-        self._chat_worker.moveToThread(self._chat_thread)
-        
-        # Connect signals
-        self._chat_thread.started.connect(self._chat_worker.run)
-        self._chat_worker.finished.connect(self._handle_chat_response)
-        self._chat_worker.finished.connect(self._chat_thread.quit)
-        self._chat_worker.status_update.connect(self._update_chat_status)
-        
-        # Start thread
-        self._chat_thread.start()
+        try:
+            if not self._chat_service:
+                self._show_warning("Service Unavailable", "Chat service not initialized")
+                return
+            
+            message = self._chat_input.text().strip()
+            if not message:
+                return
+            
+            # Display user message
+            self._append_chat_message("You", message)
+            self._chat_input.clear()
+            
+            # Update UI state
+            self._chat_send_button.setEnabled(False)
+            self._chat_input.setEnabled(False)
+            self._chat_status_label.setText("⏳ BitNet thinking...")
+            self._chat_status_label.setStyleSheet("color: #606060;")
+            
+            # Clean up old thread if exists
+            if self._chat_thread is not None and self._chat_thread.isRunning():
+                self._chat_thread.quit()
+                self._chat_thread.wait()
+            
+            # Run chat in background using QThread
+            self._chat_thread = QThread()
+            self._chat_worker = ChatWorker(self._chat_service, message)
+            self._chat_worker.moveToThread(self._chat_thread)
+            
+            # Connect signals
+            self._chat_thread.started.connect(self._chat_worker.run)
+            self._chat_worker.finished.connect(self._handle_chat_response)
+            self._chat_worker.finished.connect(self._chat_thread.quit)
+            self._chat_worker.finished.connect(self._chat_thread.deleteLater)
+            self._chat_worker.finished.connect(self._chat_worker.deleteLater)
+            self._chat_worker.status_update.connect(self._update_chat_status)
+            
+            # Start thread
+            self._chat_thread.start()
+        except Exception as e:
+            self._show_error("Chat Error", f"Failed to send message: {str(e)}")
+            self._chat_send_button.setEnabled(True)
+            self._chat_input.setEnabled(True)
+            self._chat_status_label.setText("❌ Error")
+            self._chat_status_label.setStyleSheet("color: #C41E3A;")
     
     def _handle_chat_response(self, success: bool, message: str, error: str) -> None:
         """Handle chat response."""
