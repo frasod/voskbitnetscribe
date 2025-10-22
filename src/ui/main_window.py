@@ -510,9 +510,10 @@ class MainWindow(QMainWindow):
             self._status_label.setStyleSheet("color: #606060;")
             
             # Clean up old thread if exists
-            if self._inference_thread is not None and self._inference_thread.isRunning():
-                self._inference_thread.quit()
-                self._inference_thread.wait()
+            if self._inference_thread is not None:
+                if self._inference_thread.isRunning():
+                    self._inference_thread.quit()
+                    self._inference_thread.wait(1000)  # Wait up to 1 second
             
             # Run inference in background using QThread
             self._inference_thread = QThread()
@@ -523,8 +524,6 @@ class MainWindow(QMainWindow):
             self._inference_thread.started.connect(self._inference_worker.run)
             self._inference_worker.finished.connect(self._handle_processing_complete)
             self._inference_worker.finished.connect(self._inference_thread.quit)
-            self._inference_worker.finished.connect(self._inference_thread.deleteLater)
-            self._inference_worker.finished.connect(self._inference_worker.deleteLater)
             self._inference_worker.status_update.connect(self._update_status)
             
             # Start thread
@@ -632,9 +631,10 @@ class MainWindow(QMainWindow):
             self._chat_status_label.setStyleSheet("color: #606060;")
             
             # Clean up old thread if exists
-            if self._chat_thread is not None and self._chat_thread.isRunning():
-                self._chat_thread.quit()
-                self._chat_thread.wait()
+            if self._chat_thread is not None:
+                if self._chat_thread.isRunning():
+                    self._chat_thread.quit()
+                    self._chat_thread.wait(1000)  # Wait up to 1 second
             
             # Run chat in background using QThread
             self._chat_thread = QThread()
@@ -645,8 +645,6 @@ class MainWindow(QMainWindow):
             self._chat_thread.started.connect(self._chat_worker.run)
             self._chat_worker.finished.connect(self._handle_chat_response)
             self._chat_worker.finished.connect(self._chat_thread.quit)
-            self._chat_worker.finished.connect(self._chat_thread.deleteLater)
-            self._chat_worker.finished.connect(self._chat_worker.deleteLater)
             self._chat_worker.status_update.connect(self._update_chat_status)
             
             # Start thread
