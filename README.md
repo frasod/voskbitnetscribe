@@ -32,7 +32,7 @@ main.py            # Entry point (lean)
 
 - Python 3.8+
 - VOSK model (vosk-model-small-en-us-0.15)
-- BitNet server running on http://localhost:8081
+- **BitNet/LLM server running separately** (see Setup below)
 - Microphone
 
 ## Installation
@@ -51,9 +51,55 @@ wget https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
 unzip vosk-model-small-en-us-0.15.zip
 ```
 
+### Setting Up the LLM Server
+
+**IMPORTANT**: This application requires a separate LLM inference server running. Choose one option:
+
+#### Option 1: Ollama (Recommended - Easiest)
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Start Ollama
+ollama serve
+
+# Pull a model
+ollama pull llama3.2
+
+# Configure app to use Ollama:
+# In Settings tab, set endpoint to: http://localhost:11434/api/generate
+```
+
+#### Option 2: llama.cpp
+```bash
+# Clone and build
+git clone https://github.com/ggerganov/llama.cpp
+cd llama.cpp
+make
+
+# Download a model (GGUF format)
+# Example: https://huggingface.co/models
+
+# Start server on port 8081
+./server -m /path/to/model.gguf --port 8081
+```
+
+#### Option 3: LM Studio
+- Download from https://lmstudio.ai/
+- Start local server (usually port 1234)
+- In app Settings, set endpoint to: `http://localhost:1234/v1/completions`
+
+#### Option 4: BitNet (Original)
+```bash
+# Start BitNet server on port 8081
+bitnet-server --port 8081
+```
+
+**The app will NOT work without one of these servers running!**
+
 ### Configuration
 
-Set environment variables:
+Set environment variables (optional):
 
 ```bash
 # Optional: Custom VOSK model location
@@ -63,11 +109,11 @@ export VOSK_MODEL_PATH=/path/to/vosk-model
 export BITNET_ENDPOINT=http://localhost:8081/completion
 ```
 
-Ensure BitNet server is running:
-```bash
-# Start BitNet server (adjust to your BitNet setup)
-bitnet-server --port 8081
-```
+**Or configure in the app:**
+1. Open the application
+2. Go to the **Settings** tab
+3. Update the **Endpoint URL** to match your LLM server
+4. Click **Apply Settings**
 
 ## Usage
 

@@ -245,9 +245,10 @@ class MainWindow(QMainWindow):
         title.setProperty("heading", True)
         layout.addWidget(title)
         
-        # Chat history display
+        # Chat history display (smaller size)
         self._chat_display = QTextEdit()
         self._chat_display.setReadOnly(True)
+        self._chat_display.setMaximumHeight(300)  # Limit chat window height
         layout.addWidget(self._chat_display)
         
         # Status label for chat
