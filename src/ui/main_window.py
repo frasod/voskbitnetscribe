@@ -109,11 +109,12 @@ class MainWindow(QMainWindow):
     def _init_ui(self) -> None:
         """Initialize user interface."""
         self.setWindowTitle(self._config.ui.window_title)
-        self.setGeometry(
-            100, 100,
-            self._config.ui.window_width,
-            self._config.ui.window_height
-        )
+        
+        # Set initial size and constraints
+        self.resize(self._config.ui.window_width, self._config.ui.window_height)
+        self.setMinimumSize(800, 500)  # Minimum reasonable size
+        # Window is now resizable by default
+        
         self.setStyleSheet(get_stylesheet(self._config.ui))
         
         # Central widget with tabs
@@ -133,7 +134,7 @@ class MainWindow(QMainWindow):
         # Voice transcription tab (second)
         voice_tab = QWidget()
         voice_layout = QHBoxLayout(voice_tab)
-        voice_layout.setContentsMargins(16, 16, 16, 16)
+        voice_layout.setContentsMargins(12, 8, 12, 12)  # Reduce top margin
         
         left_panel = self._create_input_panel()
         voice_layout.addLayout(left_panel, stretch=3)
@@ -237,7 +238,7 @@ class MainWindow(QMainWindow):
         """Create chat interface tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setContentsMargins(12, 8, 12, 12)  # Reduce top margin
         layout.setSpacing(12)
         
         # Title
@@ -292,7 +293,7 @@ class MainWindow(QMainWindow):
         """Create settings interface tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setContentsMargins(12, 8, 12, 12)  # Reduce top margin
         layout.setSpacing(12)
         
         # Title
